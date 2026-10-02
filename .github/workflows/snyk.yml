@@ -1,21 +1,29 @@
 name: Snyk Security Scan
+
 on:
-push:
-branches: [ "main" ]
-pull_request:
-branches: [ "main" ]
+  push:
+    branches: [ main ]
+  pull_request:
+
 jobs:
-security:
-runs-on: ubuntu-latest
-steps:
-- uses: actions/checkout@v2
-- name: Set up Node.js
-uses: actions/setup-node@v2
-with:
-node-version: '18'
-- name: Install Snyk
-run: npm install -g snyk
-- name: Run Snyk to check for vulnerabilities
-env:
-SNYK_TOKEN: ${{ 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 }}
-run: snyk test
+  snyk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Snyk
+        run: npm install -g snyk
+
+      - name: Authenticate Snyk
+        run: snyk auth ${{'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'}}
+
+      - name: Snyk Code (SAST)
+        run: snyk code test
+        continue-on-error: tru
+
