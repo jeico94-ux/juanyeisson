@@ -25,5 +25,5 @@ jobs:
 
       - name: Snyk Code (SAST)
         run: snyk code test
-        continue-on-error: tru
+        continue-on-error: true
 
