@@ -13,16 +13,31 @@ if (array_key_exists ("id", $_GET) &&
 	array_key_exists ("locale", $_GET)) {
 	$id       = $_GET[ 'id' ];
 	$security = $_GET[ 'security' ];
-	$locale = $_GET[ 'locale' ];
+	$locale   = $_GET[ 'locale' ];
 
-	ob_start();
+	// FIX CWE-94 (1): Whitelist of help files that really exist on the server.
+	// Built from the filesystem, never from user input.
+	$allowedFiles = glob( DVWA_WEB_PAGE_TO_ROOT . 'vulnerabilities/*/help/help*.php' );
+
+	// Build the requested path only to look it up in the whitelist.
 	if ($locale == 'en') {
-		eval( '?>' . file_get_contents( DVWA_WEB_PAGE_TO_ROOT . "vulnerabilities/{$id}/help/help.php" ) . '<?php ' );
+		$requested = DVWA_WEB_PAGE_TO_ROOT . "vulnerabilities/{$id}/help/help.php";
 	} else {
-		eval( '?>' . file_get_contents( DVWA_WEB_PAGE_TO_ROOT . "vulnerabilities/{$id}/help/help.{$locale}.php" ) . '<?php ' );
+		$requested = DVWA_WEB_PAGE_TO_ROOT . "vulnerabilities/{$id}/help/help.{$locale}.php";
 	}
-	$help = ob_get_contents();
-	ob_end_clean();
+
+	$index = array_search( $requested, $allowedFiles, true );
+
+	if ( $index !== false ) {
+		// FIX CWE-94 (2): No eval(). Include the trusted path taken from the whitelist,
+		// not the user-controlled string.
+		ob_start();
+		include $allowedFiles[ $index ];
+		$help = ob_get_contents();
+		ob_end_clean();
+	} else {
+		$help = "<p>Not Found</p>";
+	}
 } else {
 	$help = "<p>Not Found</p>";
 }
@@ -31,7 +46,7 @@ $page[ 'body' ] .= "
 <script src='/vulnerabilities/help.js'></script>
 <link rel='stylesheet' type='text/css' href='/vulnerabilities/help.css' />
 
-<div class=\"body_padded\">
+<div class=\"body padded\">
 	{$help}
 </div>\n";
 
